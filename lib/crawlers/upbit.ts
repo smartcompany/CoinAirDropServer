@@ -9,76 +9,75 @@ import {
   generateSummary,
 } from './utils';
 
-export class BybitCrawler implements ExchangeCrawler {
-  name = 'bybit';
-  private baseUrl = 'https://api.bybit.com/v5/announcements/index';
+export class UpbitCrawler implements ExchangeCrawler {
+  name = 'upbit';
+  private baseUrl = 'https://api-manager.upbit.com/api/v1/notices';
   
   async crawl(): Promise<CrawlerResult> {
     const errors: string[] = [];
     const airdrops: AirdropData[] = [];
 
     try {
-      console.log('Starting Bybit crawler...');
+      console.log('Starting Upbit crawler...');
       
-      // Bybit announcements API
+      // Upbit 공지사항 API
       const response = await axios.get(this.baseUrl, {
         params: {
-          locale: 'en-US',
           page: 1,
-          limit: 20,
+          per_page: 20,
         },
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json, text/plain, */*',
-          'Accept-Language': 'en-US,en;q=0.9',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+          'Accept': 'application/json',
         },
         timeout: 10000,
       });
 
-      const announcements = response.data?.result?.list || [];
+      const notices = response.data?.data || [];
 
-      for (const announcement of announcements) {
+      for (const notice of notices) {
         try {
-          const title = announcement.title || '';
-          const publishTime = announcement.dateTimestamp;
+          const title = notice.title || '';
+          const createdAt = notice.created_at;
           
           // Check if it's airdrop-related
           if (!isAirdropRelated(title)) {
             continue;
           }
 
-          const sourceUrl = `https://announcements.bybit.com/en-US/article/${announcement.id}`;
+          const sourceUrl = `https://upbit.com/service_center/notice?id=${notice.id}`;
           
-          // Use description as content (full content would require additional scraping)
-          const content = announcement.description || title;
+          // Use content as description
+          const content = notice.content || title;
           const summary = generateSummary(content);
           
           const airdropData: AirdropData = {
-            exchange: 'bybit',
+            exchange: 'upbit',
             token: extractTokenName(title),
             title: title,
             content: content,
             summary: summary,
             source_url: sourceUrl,
-            target_url: sourceUrl, // Same as source_url for Bybit
-            risk_score: 0, // Will be calculated
+            target_url: sourceUrl, // Same as source_url for Upbit
+            risk_score: 0,
             snapshot_time: extractSnapshotTime(content),
             kyc_required: detectKYC(content),
-            verified: true, // Bybit is verified
-            post_date: new Date(publishTime * 1000).toISOString(),
+            verified: true,
+            post_date: new Date(createdAt).toISOString(),
           };
 
           airdropData.risk_score = calculateRiskScore(airdropData);
           airdrops.push(airdropData);
           
-          console.log(`Found Bybit airdrop: ${title}`);
+          console.log(`Found Upbit airdrop: ${title}`);
           
         } catch (err) {
-          const error = `Error processing Bybit announcement: ${err}`;
+          const error = `Error processing Upbit notice: ${err}`;
           console.error(error);
           errors.push(error);
         }
       }
+
 
       return {
         success: true,
@@ -87,13 +86,12 @@ export class BybitCrawler implements ExchangeCrawler {
       };
 
     } catch (error) {
-      console.error('Bybit crawler failed:', error);
+      console.error('Upbit crawler failed:', error);
       return {
         success: false,
         airdrops: [],
-        errors: [`Bybit crawler failed: ${error}`],
+        errors: [`Upbit crawler failed: ${error}`],
       };
     }
   }
 }
-

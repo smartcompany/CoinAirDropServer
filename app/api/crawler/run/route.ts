@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
     
     console.log('Starting crawler via API...');
     
+    // Use regular crawlers
     const manager = new CrawlerManager();
     const result = await manager.runAll();
     

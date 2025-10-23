@@ -41,6 +41,26 @@ export function calculateRiskScore(data: Partial<AirdropData>): number {
   return Math.max(0, Math.min(100, score));
 }
 
+export function buildFullUrl(baseUrl: string, link: string): string {
+  if (!link) return baseUrl;
+  
+  // 이미 절대 URL인 경우
+  if (link.startsWith('http')) return link;
+  
+  // baseUrl이 /로 끝나고 link가 /로 시작하는 경우 중복 제거
+  if (baseUrl.endsWith('/') && link.startsWith('/')) {
+    return `${baseUrl}${link.substring(1)}`;
+  }
+  
+  // baseUrl이 /로 끝나지 않고 link가 /로 시작하지 않는 경우 / 추가
+  if (!baseUrl.endsWith('/') && !link.startsWith('/')) {
+    return `${baseUrl}/${link}`;
+  }
+  
+  // 나머지 경우는 그대로 연결
+  return `${baseUrl}${link}`;
+}
+
 // Extract token name from title
 export function extractTokenName(title: string): string | null {
   // Try to extract token symbol (usually in uppercase, 2-10 chars)
@@ -67,7 +87,21 @@ export function extractSnapshotTime(text: string): string | null {
   for (const pattern of datePatterns) {
     const match = text.match(pattern);
     if (match) {
-      return match[1];
+      try {
+        // Validate and format the date
+        const dateStr = match[1];
+        const date = new Date(dateStr);
+        
+        // Check if date is valid and not too far in the future
+        if (isNaN(date.getTime()) || date.getFullYear() > 2030) {
+          continue;
+        }
+        
+        return date.toISOString();
+      } catch (error) {
+        console.warn(`Invalid date format: ${match[1]}`);
+        continue;
+      }
     }
   }
 

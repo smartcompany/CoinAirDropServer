@@ -8,49 +8,35 @@ import {
   detectKYC,
   extractSnapshotTime,
   generateSummary,
-  buildFullUrl,
 } from './utils';
 
-export class BinanceCrawler implements ExchangeCrawler {
-  name = 'binance';
-  private baseUrl = 'https://www.binance.com/en/support/announcement';
-  
+export class HuobiCrawler implements ExchangeCrawler {
+  name = 'huobi';
+  private baseUrl = 'https://www.htx.com/support';
+
   async crawl(): Promise<CrawlerResult> {
     const errors: string[] = [];
     const airdrops: AirdropData[] = [];
 
     try {
-      console.log('Starting Binance crawler...');
-      
-      // Binance 공지사항 페이지 스크래핑
+      console.log('Starting Huobi crawler...');
+
       const response = await axios.get(this.baseUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'DNT': '1',
-          'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1',
         },
-        timeout: 15000,
+        timeout: 10000,
       });
 
       const $ = cheerio.load(response.data);
       
-      // Binance 공지사항 링크를 찾기
+      // HTX 공지사항 링크를 찾기 (실제 페이지 구조에 맞게)
       const announcementLinks = $('a').filter((i, el) => {
         const href = $(el).attr('href');
         const text = $(el).text().trim();
-        return Boolean(
-          href && 
-          text && 
-          href.includes('/en/support/announcement/') && 
-          text.length > 10 &&
-          !text.includes('Load More') &&
-          !text.includes('Previous') &&
-          !text.includes('Next')
-        );
+        return Boolean(href && text && href.includes('/announcement/') && text.length > 10);
       }).slice(0, 10);
 
       announcementLinks.each((i, element) => {
@@ -62,17 +48,17 @@ export class BinanceCrawler implements ExchangeCrawler {
             return;
           }
 
-            // 링크가 상대 경로인 경우 절대 경로로 변환
-          const targetUrl = buildFullUrl(this.baseUrl, link || '');
+          // 링크가 상대 경로인 경우 절대 경로로 변환
+          const fullUrl = link?.startsWith('http') ? link : `https://www.htx.com${link}`;
           
           const airdropData: AirdropData = {
-            exchange: 'binance',
+            exchange: 'huobi',
             token: extractTokenName(title),
             title: title,
             content: title, // 제목만으로는 내용이 부족하므로 제목을 내용으로 사용
             summary: generateSummary(title),
             source_url: this.baseUrl,
-            target_url: targetUrl, // 실제 공지사항 링크
+            target_url: fullUrl, // 실제 공지사항 링크
             risk_score: 0,
             snapshot_time: extractSnapshotTime(title),
             kyc_required: detectKYC(title),
@@ -82,14 +68,15 @@ export class BinanceCrawler implements ExchangeCrawler {
 
           airdropData.risk_score = calculateRiskScore(airdropData);
           airdrops.push(airdropData);
-          console.log(`Found Binance airdrop: ${title}`);
+          console.log(`Found Huobi airdrop: ${title}`);
 
         } catch (err) {
-          const error = `Error processing Binance announcement: ${err}`;
+          const error = `Error processing Huobi announcement: ${err}`;
           console.error(error);
           errors.push(error);
         }
       });
+
 
       return {
         success: true,
@@ -98,13 +85,12 @@ export class BinanceCrawler implements ExchangeCrawler {
       };
 
     } catch (error) {
-      console.error('Binance crawler failed:', error);
+      console.error('Huobi crawler failed:', error);
       return {
         success: false,
         airdrops: [],
-        errors: [`Binance crawler failed: ${error}`],
+        errors: [`Huobi crawler failed: ${error}`],
       };
     }
   }
 }
-

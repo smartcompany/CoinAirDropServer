@@ -1,5 +1,12 @@
-import { BinanceCrawler } from './binance';
+import { BinanceRssCrawler } from './binance-rss';
 import { BybitCrawler } from './bybit';
+import { UpbitCrawler } from './upbit';
+import { BithumbCrawler } from './bithumb';
+import { OkxCrawler } from './okx';
+import { CoinbaseCrawler } from './coinbase';
+import { KrakenCrawler } from './kraken';
+import { HuobiCrawler } from './huobi';
+import { KuCoinCrawler } from './kucoin';
 import { supabase } from '../supabase';
 import { ExchangeCrawler, CrawlerResult, AirdropData } from './types';
 
@@ -8,8 +15,15 @@ export class CrawlerManager {
 
   constructor() {
     this.crawlers = [
-      new BinanceCrawler(),
+      new BinanceRssCrawler(),
       new BybitCrawler(),
+      new UpbitCrawler(),
+      new BithumbCrawler(),
+      new OkxCrawler(),
+      new CoinbaseCrawler(),
+      new KrakenCrawler(),
+      new HuobiCrawler(),
+      new KuCoinCrawler(),
     ];
   }
 
@@ -53,7 +67,7 @@ export class CrawlerManager {
     };
   }
 
-  private async saveAirdrops(airdrops: AirdropData[]): Promise<number> {
+  async saveAirdrops(airdrops: AirdropData[]): Promise<number> {
     let saved = 0;
 
     for (const airdrop of airdrops) {
@@ -88,5 +102,5 @@ export class CrawlerManager {
 }
 
 export * from './types';
-export { BinanceCrawler, BybitCrawler };
+export { BinanceRssCrawler, BybitCrawler, UpbitCrawler, BithumbCrawler, OkxCrawler, CoinbaseCrawler, KrakenCrawler, HuobiCrawler, KuCoinCrawler };
 

@@ -11,7 +11,14 @@ const nextConfig = {
   // Optimize for production
   poweredByHeader: false,
   reactStrictMode: true,
-}
+  // Enable .txt file imports
+  webpack: (config) => {
+    config.module.rules.push({
+      test: /\.txt$/,
+      use: 'raw-loader',
+    });
+    return config;
+  },
+};
 
-export default nextConfig
-
+module.exports = nextConfig;

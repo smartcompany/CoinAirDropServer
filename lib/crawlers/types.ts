@@ -5,6 +5,7 @@ export interface AirdropData {
   content: string;
   summary: string | null;
   source_url: string;
+  target_url: string | null;
   risk_score: number;
   snapshot_time: string | null;
   kyc_required: boolean;
